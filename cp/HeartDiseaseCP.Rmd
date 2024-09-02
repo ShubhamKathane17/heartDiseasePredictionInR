@@ -1,0 +1,352 @@
+---
+title: "Data Science Course Project"
+output: html_notebook
+---
+Problem Statement:
+To predict if a person have heart disease or not based
+on attributes blood pressure,heart beat , 
+exang = (exang: Exercise induced angina (1 = yes; 0 = no) )
+fbs = (Fasting blood sugar (FBS) measures blood glucose after you have not eaten for at least 8 hours) (1 if blood sugar>120 mg) 
+cp = chest pain (0<1<2<3)
+ca = coronary calcium scan
+trestbps = resting blood pressure in mmHg
+chol = cholesterol (mg)
+thalach = maximum heart rate
+oldpeak = ST(points on ECG plot) depression induced by exercise relative to rest
+restecg = rest Electro cardio graph
+target = if there is heart disease it will show 1 otherwise it will show 0
+```{r}
+install.packages("tidyverse")
+library(tidyverse)
+data<-read.csv("C:/Users/shubh/Downloads/heart.csv")
+View(data)
+```
+
+
+```{r}
+head(data)
+```
+```{r}
+tail(data)
+```
+```{r}
+glimpse(data)
+```
+```{r}
+ncol(data)
+nrow(data)
+```
+```{r}
+summary(data)
+```
+```{r}
+data2<- data %>%
+  mutate(sex=if_else(sex==1,"male","female"),
+         fbs=if_else(fbs==1,">120","<=120"),
+         exang=if_else(exang==1,"yes","no"),
+         cp=if_else(cp==1,"ATYPICAL ANGINA",
+                    if_else(cp==2,"NON-ANGINAL PAIN","ASYMPTOMATIC")),
+         restecg=if_else(restecg==0,"NORMAL",
+         if_else(restecg==1,"ABNORMALITY","PROBABLE OR DEFINITIVE")),
+         slope=as.factor(slope),
+         ca=as.factor(ca),
+         thal=as.factor(thal),
+         target=if_else(target==1 ,"YES","NO")
+         ) %>%
+  mutate_if(is.character,as.factor) %>%
+  dplyr::select(target,sex,fbs,exang,cp,restecg,slope,ca,thal,everything())
+  #install.packages("repr")  
+  library(repr)
+```
+
+```{r}
+# change the size of the plot
+options(repr.plot.width =6 ,repr.plot.height = 3)
+```
+
+```{r}
+#bar plot for target (heart disease)
+ggplot(data2,aes(x=data2$target,fill=data2$target))+
+  geom_bar() +
+  xlab("Heart Disease") +
+  ylab("Count") +
+  ggtitle("Presence & Absence of Heart Disease") +
+  scale_fill_discrete(name = 'Heart Disease', labels = c("Absent", "Present"))
+```
+```{r}
+prop.table(table(data2$target))
+```
+```{r}
+#count the frequency of the values of age
+
+data2 %>%
+  group_by(age) %>%
+  count() %>%
+  filter(n>10) %>%
+  ggplot()+
+  geom_col(aes(age,n),fill='green')+
+  ggtitle("Age Analysis")+
+  xlab("Age")+
+  ylab("Age Count")
+```
+```{r}
+#plot the distribution of the resting blood pressure
+ggplot(data2,aes(x=trestbps))+
+  geom_bar()
+
+```
+```{r}
+#create a basic ggplot2 pie chart displaying the sex column of thne dataset
+plotdata<- data2 %>%
+  count(sex) %>%
+  arrange(desc(sex)) %>%
+  mutate(prop = round(n*100/sum(n),1),
+         lab.ypos=cumsum(prop)- 0.5 *prop)
+ggplot(plotdata,
+       aes(x=" ",
+           y=prop,
+           fill=sex))+
+  geom_bar(width=1, 
+           stat = "identity",
+           color="black")+
+  coord_polar("y",
+              start =0,
+              direction = -1)+
+  theme_void()
+```
+```{r}
+#fasting blood sugar
+plotdata<- data2 %>%
+  count(fbs) %>%
+  arrange(desc(fbs)) %>%
+  mutate(prop=round(n*100/sum(n), 1),
+         lab.ypos=cumsum(prop)- 0.5 * prop)
+ ggplot(plotdata,
+        aes(x=" ",
+            y=prop,
+            fill=fbs))+
+   geom_bar(width=1,
+            stat = "identity",
+            color="black")+
+   coord_polar("y",
+               start = 0,
+               direction = -1)+
+   theme_void()
+```
+```{r}
+#bivariate plots dependent on two variables for displaying the result
+
+#cp: the chest pain experienced (value 1: typical angina, value 2: atypical angina , value 3: non anginal pain , value 4: asymptomatic)
+ggplot(data2,
+       aes(x=target,
+           fill=cp ))+
+  geom_bar(position = "stack")
+
+```
+```{r}
+ggplot(data2,
+       aes(x=sex,
+           fill=cp))+
+  geom_bar(position = "stack")
+```
+```{r}
+#compare blood pressure across the chest pain by their respective genders
+
+data2 %>%
+  ggplot(aes(x=sex,y=trestbps))+
+  geom_boxplot(fill='purple')+
+  xlab("Sex")+
+  ylab("BP")+
+  facet_grid(~cp)
+```
+```{r}
+#compare blood pressure across the chest pain irrespective of their genders
+data2 %>%
+  ggplot(aes(x=sex,y=trestbps))+
+  geom_boxplot(fill="purple")+
+  xlab("Sex")+
+  ylab("BP")+
+  facet_grid(~cp)
+```
+```{r}
+#compare cholestrol across the chest pain by their respective genders
+data2 %>%
+  ggplot(aes(x=sex,y=chol))+
+  geom_boxplot(fill="orange")+
+  xlab("Sex")+
+  ylab("Cholestrol")+
+  facet_grid(~cp)
+```
+```{r}
+#simple scatterplot
+ggplot(data2, 
+       aes(x=chol,
+           y=age))+
+  geom_point()
+```
+
+```{r}
+#scatterplot with a linear progression direction 
+#thalach : maximum heart rate achieved
+ggplot(data2,
+       aes(x=thalach,
+           y=age))+
+  geom_point(color="steelblue")+
+  geom_smooth(method = "lm")
+```
+```{r}
+#Scatterplot with a polynomial direction , comparing age with cholestrol
+ggplot(data2,
+       aes(x=age,
+           y=chol))+
+  geom_point(color="steelblue")+
+  geom_smooth(method = "lm",
+              formula = y~poly(x,2),
+              color="indianred3")
+
+```
+```{r}
+install.packages('caTools')
+library(caTools)
+
+#randomly split data
+set.seed(123)
+split=sample.split(data$target,SplitRatio = 0.75)
+split
+
+qualityTrain=subset(data,split==TRUE)
+qualityTest=subset(data,split==FALSE)
+
+```
+```{r}
+nrow(qualityTrain)
+nrow(qualityTest)
+
+```
+```{r}
+#building the model 
+# the dependent variable used is target, for the independent variable is age , trestbps, chol, fbs , restecg, thalach,exang, oldpeak,slope
+#e,ca,and thal.
+#logistic regression model
+data=glm(target ~
+           age+trestbps+chol+fbs+
+           restecg+thalach+exang+oldpeak+slope+ca+thal,
+         data = qualityTrain,family = binomial)
+summary(data)
+```
+```{r}
+#a lot of variables are not significant.
+#now we will removing variables based on Significance level
+#using the backward method
+
+data=glm(target~age+sex+cp+trestbps+chol+fbs+thalach+
+           exang+oldpeak+slope+ca+thal,
+         data=qualityTrain,family = binomial)
+summary(data)
+```
+```{r}
+#after removing as many as 4 variables in the following order :
+#1.remove restecg
+#2.remove fbs
+#3.remove slope
+#4.remove exang
+
+data=glm(target~sex+cp+trestbps+chol+thalach+oldpeak+ca+thal,
+         data=qualityTrain,family = binomial)
+summary(data)
+```
+```{r}
+#applying model after removing least significant variables
+# a general rule in machine learning is that then more features you 
+# have , the more likely model will suffer from overfitting
+
+predictTrain=predict(data,type = "response")
+predictTrain
+```
+```{r}
+#plotting rocr curve 
+#install.packages("ROCR")
+library(ROCR)
+rocrpred=prediction(predictTrain,qualityTrain$target)
+rocrperf=performance(rocrpred,'tpr','fpr')
+
+#plot(rocrperf,colorize=TRUE)
+plot(rocrperf,colorize=TRUE,print.cutoffs.at=seq(0,1,by=0.1),
+     text.adj=c(-0.2,1.7))
+```
+```{r}
+#from rocr curve threshold of 0.7 seems to be okay so that true positives are maximised such that maximum number of patients with heart disease
+# are not identified as healthy.
+# then we can see the value of AUC , higher the AUC ,better the model is at distinguishing between patients with disease and no disease.
+# area under then curve
+auc= as.numeric(performance(rocrpred,'auc')@y.values)
+auc
+```
+auc value is 0.91 that means our model is able to distinguish between patients with the disease and no disease with a probability of 0.91 so it is a good value 
+
+```{r}
+#accuracy using a threshold of 0.7
+
+predictTest=predict(data,newdata = qualityTest,type = 'response')
+table(qualityTest$target,predictTest >=0.7)
+```
+```{r}
+#accuracy 
+(113+90)/257
+
+```
+#logistic regression model with all the variables and logistic regression model after removing less significant attributes performed best with an accuracy of testing 78%
+```{r}
+# Load required packages
+library(caret)
+
+# Load heart disease data
+data<-read.csv("C:/Users/shubh/Downloads/heart.csv")
+
+
+# Fit logistic regression model
+model <- train(target ~ ., data = data, method = "glm", family = "binomial")
+
+# Function to validate numeric input
+validate_numeric_input <- function(x) {
+  while (is.na(as.numeric(x))) {
+    x <- readline(prompt = "Invalid input. Please enter a numeric value: ")
+  }
+  return(as.numeric(x))
+}
+
+# Prompt user for input values
+age <- validate_numeric_input(readline(prompt = "Enter your age: "))
+sex <- validate_numeric_input(readline(prompt = "Enter your sex (0 = female, 1 = male): "))
+cp <- validate_numeric_input(readline(prompt = "Enter your chest pain type (0-3): "))
+trestbps <- validate_numeric_input(readline(prompt = "Enter your resting blood pressure: "))
+chol <- validate_numeric_input(readline(prompt = "Enter your serum cholesterol : "))
+fbs <- validate_numeric_input(readline(prompt = "Enter your fasting blood sugar (0 = <= 120 mg/dL, 1 = > 120 mg/dL): "))
+restecg <- validate_numeric_input(readline(prompt = "Enter your resting electrocardiographic results (0-2): "))
+thalach <- validate_numeric_input(readline(prompt = "Enter your maximum heart rate achieved : "))
+exang <- validate_numeric_input(readline(prompt = "Enter whether you have exercise-induced angina (0 = no, 1 = yes): "))
+oldpeak <- validate_numeric_input(readline(prompt = "Enter your ST depression induced by exercise relative to rest: "))
+slope <- validate_numeric_input(readline(prompt = "Enter the slope of the peak exercise ST segment (0-2): "))
+ca <- validate_numeric_input(readline(prompt = "Enter the number of major vessels colored by fluoroscopy (0-3): "))
+thal <- validate_numeric_input(readline(prompt = "Enter your thalassemia (0-3): "))
+# Create data frame with input values
+new_data <- data.frame(age = age, sex = sex, cp = cp, trestbps = trestbps, chol = chol, fbs = fbs, restecg = restecg,
+                       thalach = thalach, exang = exang, oldpeak = oldpeak, slope = slope, ca = ca, thal = thal)
+
+# Use model to predict target
+prediction_prob <- predict(model, newdata = new_data, type = "raw")
+
+# Output prediction
+# Use model to predict target probabilities
+prediction_prob <- predict(model, newdata = new_data, type = "raw")
+
+# Output prediction with probability
+if (prediction_prob >= 0.5) {
+  message("You are predicted to have heart disease with a probability of ", round(prediction_prob, 2))
+} else {
+  message("You are predicted to not have heart disease with a probability of ", round(1-prediction_prob, 2))
+}
+```
+
+
+

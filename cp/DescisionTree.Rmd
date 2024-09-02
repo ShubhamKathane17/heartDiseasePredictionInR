@@ -1,0 +1,53 @@
+```{r}
+# Load required packages
+library(rpart)
+#install.packages("rpart.plot")
+library(rpart.plot)
+
+# Load heart disease data
+data <- read.csv("C:/Users/shubh/Downloads/heart.csv")
+
+# Fit decision tree model
+model <- rpart(target ~ ., data = data, method = "class")
+
+# Function to validate numeric input
+validate_numeric_input <- function(x) {
+  while (is.na(as.numeric(x))) {
+    x <- readline(prompt = "Invalid input. Please enter a numeric value: ")
+  }
+  return(as.numeric(x))
+}
+
+# Prompt user for input values
+age <- validate_numeric_input(readline(prompt = "Enter your age: "))
+sex <- validate_numeric_input(readline(prompt = "Enter your sex (0 = female, 1 = male): "))
+cp <- validate_numeric_input(readline(prompt = "Enter your chest pain type (0-3): "))
+trestbps <- validate_numeric_input(readline(prompt = "Enter your resting blood pressure: "))
+chol <- validate_numeric_input(readline(prompt = "Enter your serum cholesterol : "))
+fbs <- validate_numeric_input(readline(prompt = "Enter your fasting blood sugar (0 = <= 120 mg/dL, 1 = > 120 mg/dL): "))
+restecg <- validate_numeric_input(readline(prompt = "Enter your resting electrocardiographic results (0-2): "))
+thalach <- validate_numeric_input(readline(prompt = "Enter your maximum heart rate achieved : "))
+exang <- validate_numeric_input(readline(prompt = "Enter whether you have exercise-induced angina (0 = no, 1 = yes): "))
+oldpeak <- validate_numeric_input(readline(prompt = "Enter your ST depression induced by exercise relative to rest: "))
+slope <- validate_numeric_input(readline(prompt = "Enter the slope of the peak exercise ST segment (0-2): "))
+ca <- validate_numeric_input(readline(prompt = "Enter the number of major vessels colored by fluoroscopy (0-3): "))
+thal <- validate_numeric_input(readline(prompt = "Enter your thalassemia (0-3): "))
+
+# Create data frame with input values
+new_data <- data.frame(age = age, sex = sex, cp = cp, trestbps = trestbps, chol = chol, fbs = fbs, restecg = restecg,
+                       thalach = thalach, exang = exang, oldpeak = oldpeak, slope = slope, ca = ca, thal = thal)
+
+# Use model to predict target
+prediction_prob <- predict(model, newdata = new_data, type = "prob")
+
+# Output prediction with probability
+if (prediction_prob[1,2] >= 0.5) {
+  message("You are predicted to have heart disease with a probability of ", round(prediction_prob[1,2], 2))
+} else {
+  message("You are predicted to not have heart disease with a probability of ", round(prediction_prob[1,1], 2))
+}
+
+# Visualize decision tree
+rpart.plot(model)
+```
+
